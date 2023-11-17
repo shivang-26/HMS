@@ -1,0 +1,377 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <unordered_map>
+
+class Node {
+public:
+    std::string key;
+    Node* left;
+    Node* right;
+
+    Node(std::string k) : key(k), left(nullptr), right(nullptr) {}
+};
+
+class BinarySearchTree {
+private:
+    Node* root;
+
+    Node* insert(Node* node, std::string key) {
+        if (node == nullptr)
+            return new Node(key);
+
+        if (key < node->key)
+            node->left = insert(node->left, key);
+        else if (key > node->key)
+            node->right = insert(node->right, key);
+
+        return node;
+    }
+
+    void inOrderTraversal(Node* node) {
+        if (node != nullptr) {
+            inOrderTraversal(node->left);
+            std::cout << node->key << std::endl;
+            inOrderTraversal(node->right);
+        }
+    }
+
+public:
+    BinarySearchTree() : root(nullptr) {}
+
+    void insert(std::string key) {
+        root = insert(root, key);
+    }
+
+    void display() {
+        inOrderTraversal(root);
+    }
+
+    Node* search(Node* node, std::string key) {
+        if (node == nullptr || node->key == key)
+            return node;
+
+        if (key < node->key)
+            return search(node->left, key);
+
+        return search(node->right, key);
+    }
+
+    Node* search(std::string key) {
+        return search(root, key);
+    }
+};
+
+class Appointment {
+public:
+    std::string patientName;
+    std::string doctorName;
+    std::string date;
+
+    Appointment(std::string p, std::string d, std::string dt) : patientName(p), doctorName(d), date(dt) {}
+};
+
+class DoctorDashboard {
+private:
+    std::vector<Appointment> appointments;
+    std::string username;  
+    std::string password;
+
+public:
+    DoctorDashboard(std::string uname, std::string pwd) : username(uname), password(pwd) {}
+
+    bool login(std::string uname, std::string pwd) {
+        return (uname == username && pwd == password);
+    }
+
+    void approveAppointment(std::string patientName, std::string doctorName, std::string date) {
+        appointments.emplace_back(patientName, doctorName, date);
+    }
+
+    void displayAppointments() {
+        std::cout << "Appointments awaiting approval:" << std::endl;
+        for (const auto& appointment : appointments) {
+            std::cout << "Patient: " << appointment.patientName
+                      << ", Doctor: " << appointment.doctorName
+                      << ", Date: " << appointment.date << std::endl;
+        }
+    }
+};
+
+class PatientDashboard {
+private:
+    std::string email;
+    std::string password;
+    BinarySearchTree doctors;
+    std::vector<Appointment> appointments; // Added vector to store appointments
+
+public:
+    PatientDashboard() {}
+
+    void registerPatient() {
+        std::string name;
+        std::cout << "Enter your name: ";
+        std::cin >> name;
+        std::cout << "Enter your email: ";
+        std::cin >> email;
+        std::cout << "Enter your password: ";
+        std::cin >> password;
+        patientInfo[email] = {name, password};
+        std::cout << "Patient registered successfully." << std::endl;
+    }
+    void loginPatient() {
+        std::string enteredEmail, enteredPassword;
+        std::cout << "Enter your email: ";
+        std::cin >> enteredEmail;
+        std::cout << "Enter your password: ";
+        std::cin >> enteredPassword;
+
+        auto it = patientInfo.find(enteredEmail);
+        if (it != patientInfo.end() && it->second.second == enteredPassword) {
+            email = it->first;
+            std::cout << "Login successful. Welcome, " << it->second.first << "!" << std::endl;
+            int patientChoice;
+            do {
+                std::cout << "\nPatient Dashboard:" << std::endl;
+                std::cout << "1. Book Appointment" << std::endl;
+                std::cout << "2. View Old Appointments" << std::endl;
+                std::cout << "3. Exit" << std::endl;
+                std::cout << "Enter your choice: ";
+                std::cin >> patientChoice;
+
+                switch (patientChoice) {
+                    case 1:
+                        bookAppointment();
+                        break;
+                    case 2:
+                        viewAppointments();
+                        break;
+                    case 3:
+                        std::cout << "Exiting Patient Dashboard." << std::endl;
+                        break;
+                    default:
+                        std::cout << "Invalid choice. Please try again." << std::endl;
+                        break;
+                }
+            } while (patientChoice != 3);
+        } else {
+            std::cout << "Invalid email or password. Please try again." << std::endl;
+        }
+    }
+
+    void displayDoctors() {
+        std::cout << "Available doctors:" << std::endl;
+        doctors.display();
+    }
+
+private:
+    // Store patient information in a map (you might use a database in a real application)
+    std::unordered_map<std::string, std::pair<std::string, std::string>> patientInfo;
+
+    void bookAppointment() {
+        std::string doctorName;
+        std::cout << "Enter doctor's name for appointment: ";
+        std::cin >> doctorName;
+
+        Node* doctorNode = doctors.search(doctorName);
+        if (doctorNode != nullptr) {
+            std::string date;
+            std::cout << "Enter appointment date (YYYY-MM-DD): ";
+            std::cin >> date;
+            appointments.emplace_back(email, doctorName, date);
+            std::cout << "Appointment booked successfully." << std::endl;
+        } else {
+            std::cout << "Doctor not found. Please try again." << std::endl;
+        }
+    }
+
+    void viewAppointments() {
+        std::cout << "Your appointments:" << std::endl;
+        for (const auto& appointment : appointments) {
+            if (appointment.patientName == email) {
+                std::cout << "Doctor: " << appointment.doctorName
+                          << ", Date: " << appointment.date << std::endl;
+            }
+        }
+    }
+};
+
+
+class AdminDashboard {
+private:
+    BinarySearchTree patients;
+    BinarySearchTree doctors;
+    std::string username;  
+    std::string password;
+
+public:
+    AdminDashboard(std::string uname, std::string pwd) : username(uname), password(pwd) {}
+
+    bool login(std::string uname, std::string pwd) {
+        return (uname == username && pwd == password);
+    }
+
+    void addPatient(std::string name) {
+        patients.insert(name);
+    }
+
+    void addDoctor(std::string name) {
+        doctors.insert(name);
+    }
+
+    void displayPatients() {
+        std::cout << "Patients:" << std::endl;
+        patients.display();
+    }
+
+    void displayDoctors() {
+        std::cout << "Doctors:" << std::endl;
+        doctors.display();
+    }
+};
+
+int main() {
+    AdminDashboard adminDashboard("admin", "adminpassword");
+    DoctorDashboard doctorDashboard("doctor", "doctorpassword");
+
+    PatientDashboard patientDashboard;
+
+    int choice;
+
+    do {
+        std::cout << "\nMenu:" << std::endl;
+        std::cout << "1. Admin Dashboard" << std::endl;
+        std::cout << "2. Doctor Dashboard" << std::endl;
+        std::cout << "3. Patient Dashboard" << std::endl;
+        std::cout << "4. Exit" << std::endl;
+        std::cout << "Enter your choice: ";
+        std::cin >> choice;
+
+        switch (choice) {
+            case 1: {
+                std::string uname, pwd;
+                std::cout << "Enter admin username: ";
+                std::cin >> uname;
+                std::cout << "Enter admin password: ";
+                std::cin >> pwd;
+                if (adminDashboard.login(uname, pwd)) {
+                    int adminChoice;
+                    do {
+                        std::cout << "\nAdmin Dashboard:" << std::endl;
+                        std::cout << "1. Display Patients" << std::endl;
+                        std::cout << "2. Add Patient" << std::endl;
+                        std::cout << "3. Display Doctors" << std::endl;
+                        std::cout << "4. Add Doctor" << std::endl;
+                        std::cout << "5. Exit" << std::endl;
+                        std::cout << "Enter your choice: ";
+                        std::cin >> adminChoice;
+
+                        switch (adminChoice) {
+                            case 1:
+                                adminDashboard.displayPatients();
+                                break;
+                            case 2: {
+                                std::string name;
+                                std::cout << "Enter patient name: ";
+                                std::cin >> name;
+                                adminDashboard.addPatient(name);
+                                break;
+                            }
+                            case 3:
+                                adminDashboard.displayDoctors();
+                                break;
+                            case 4: {
+                                std::string name;
+                                std::cout << "Enter doctor name: ";
+                                std::cin >> name;
+                                adminDashboard.addDoctor(name);
+                                break;
+                            }
+                            case 5:
+                                std::cout << "Exiting Admin Dashboard." << std::endl;
+                                break;
+                            default:
+                                std::cout << "Invalid choice. Please try again." << std::endl;
+                                break;
+                        }
+                    } while (adminChoice != 5);
+                } else {
+                    std::cout << "Invalid admin username or password. Please try again." << std::endl;
+                }
+                break;
+            }
+            case 2: {
+                std::string uname, pwd;
+                std::cout << "Enter doctor username: ";
+                std::cin >> uname;
+                std::cout << "Enter doctor password: ";
+                std::cin >> pwd;
+                if (doctorDashboard.login(uname, pwd)) {
+                    int doctorChoice;
+                    do {
+                        std::cout << "\nDoctor Dashboard:" << std::endl;
+                        std::cout << "1. Approve Appointments" << std::endl;
+                        std::cout << "2. Display Appointments" << std::endl;
+                        std::cout << "3. Exit" << std::endl;
+                        std::cout << "Enter your choice: ";
+                        std::cin >> doctorChoice;
+
+                        switch (doctorChoice) {
+                            case 1: {
+                                // Code for approving appointments
+                                break;
+                            }
+                            case 2:
+                                doctorDashboard.displayAppointments();
+                                break;
+                            case 3:
+                                std::cout << "Exiting Doctor Dashboard." << std::endl;
+                                break;
+                            default:
+                                std::cout << "Invalid choice. Please try again." << std::endl;
+                                break;
+                        }
+                    } while (doctorChoice != 3);
+                } else {
+                    std::cout << "Invalid doctor username or password. Please try again." << std::endl;
+                }
+                break;
+            }
+            case 3: {
+                int patientChoice;
+                do {
+                    std::cout << "\nPatient Dashboard:" << std::endl;
+                    std::cout << "1. Login" << std::endl;
+                    std::cout << "2. Register" << std::endl;
+                    std::cout << "3. Exit" << std::endl;
+                    std::cout << "Enter your choice: ";
+                    std::cin >> patientChoice;
+
+                    switch (patientChoice) {
+                        case 1:
+                            patientDashboard.loginPatient();
+                            break;
+                        case 2:
+                            patientDashboard.registerPatient();
+                            break;
+                        case 3:
+                            std::cout << "Exiting Patient Dashboard." << std::endl;
+                            break;
+                        default:
+                            std::cout << "Invalid choice. Please try again." << std::endl;
+                            break;
+                    }
+                } while (patientChoice != 3);
+                break;
+            }
+            case 4:
+                std::cout << "Exiting program." << std::endl;
+                break;
+            default:
+                std::cout << "Invalid choice. Please try again." << std::endl;
+                break;
+        }
+    } while (choice != 4);
+
+    return 0;
+}
